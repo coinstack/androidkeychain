@@ -54,6 +54,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     private FingerprintManagerCompat.CryptoObject mCryptoObject;
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
+    private Callback callback;
 
     public FingerprintAuthenticationDialogFragment() {
     }
@@ -92,7 +93,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         mCancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                KeyChain.onCancelled();
+                callback.onCancel();
                 dismiss();
             }
         });
@@ -198,7 +199,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
                     return;
                 }
                 if (KeyChain.mDisableBackup) {
-                    KeyChain.onError("backup disabled");
+                    this.callback.onError("backup disabled");
                     return;
                 }
                 showAuthenticationScreen();
@@ -219,13 +220,9 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS) {
             // Challenge completed, proceed with using cipher
-            if (resultCode == getActivity().RESULT_OK) {
-                KeyChain.onAuthenticated(false /* used backup */);
-            } else {
-                // The user canceled or didn’t complete the lock screen
-                // operation. Go to error/cancellation flow.
-                KeyChain.onCancelled();
-            }
+            // The user canceled or didn’t complete the lock screen
+            // operation. Go to error/cancellation flow.
+            this.callback.onCancel();
             dismiss();
         }
     }
@@ -234,7 +231,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     public void onAuthenticated() {
         // Callback from FingerprintUiHelper. Let the activity know that authentication was
         // successful.
-        KeyChain.onAuthenticated(true /* withFingerprint */);
+        this.callback.onSuccess();
         dismiss();
     }
 
@@ -243,7 +240,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         if (!KeyChain.mDisableBackup) {
             goToBackup();
         } else {
-            KeyChain.onError(errString.toString());
+            this.callback.onError(errString.toString());
             dismiss();
 
         }
@@ -252,7 +249,11 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     @Override
     public void onCancel(DialogInterface dialog) {
         super.onCancel(dialog);
-        KeyChain.onCancelled();
+        this.callback.onCancel();
+    }
+
+    public void setCallback(Callback callback) {
+        this.callback = callback;
     }
 
     /**
@@ -262,5 +263,11 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         FINGERPRINT,
         NEW_FINGERPRINT_ENROLLED,
         BACKUP
+    }
+
+    public interface Callback {
+        void onSuccess();
+        void onError(String errString);
+        void onCancel();
     }
 }
