@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -32,6 +33,7 @@ import io.blocko.bitcoinj.params.MainNetParams;
 public class MainActivity extends AppCompatActivity {
     private static final int FINGERPRINT_PERMISSION_REQUEST_CODE = 0;
     private FingerprintManagerCompat fm;
+    private FragmentManager fragmentManager;
 
     public static String byteArrayToHex(byte[] ba) {
         if (ba == null || ba.length == 0) {
@@ -53,6 +55,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        KeyChain.packageName = getApplicationContext().getPackageName();
+        KeyChain.mMaxAttempts = 3;
+
+
         final Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -67,6 +73,9 @@ public class MainActivity extends AppCompatActivity {
         });
         final Button button2 = (Button) findViewById(R.id.button2);
         this.fm = FingerprintManagerCompat.from(this.getApplicationContext());
+        this.fragmentManager = this.getSupportFragmentManager();
+
+
         button2.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 System.out.println("button 2");
@@ -82,6 +91,15 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         System.out.println("has no fingerprint enrolled");
                     }
+
+
+                    if (isFingerprintAvailable()) {
+                        // do fingerprint auth
+                        FingerprintAuthenticationDialogFragment mFragment = new FingerprintAuthenticationDialogFragment();
+                        mFragment.show(fragmentManager, "FpAuthDialog");
+                    }
+
+
                 } else {
                     System.out.println("no fingerprint permission");
                     requestPermission();
