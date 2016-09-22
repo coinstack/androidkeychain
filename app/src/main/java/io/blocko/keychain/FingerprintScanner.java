@@ -46,6 +46,10 @@ public class FingerprintScanner {
     public static boolean mDisableBackup;
 
     public void generateSeed() throws IOException {
+        generateSeed(this.keyID);
+    }
+
+    public static void generateSeed(String keyID) throws IOException {
         KeyStore mKeyStore = null;
         try {
             mKeyStore = KeyStore.getInstance("AndroidKeyStore");
@@ -63,8 +67,10 @@ public class FingerprintScanner {
             throw new IOException("Failed to create key", e);
         }
     }
-
     public void removeSeed() throws IOException {
+        removeSeed(this.keyID);
+    }
+    public static void removeSeed(String keyID) throws IOException {
         try {
             KeyStore mKeyStore = KeyStore.getInstance("AndroidKeyStore");
             mKeyStore.load(null);
