@@ -26,6 +26,7 @@ public class KeyChain {
     private final AppCompatActivity activity;
     private final String keyID;
     private FingerprintManagerCompat fm;
+    private Locale locale;
 
     public KeyChain(AppCompatActivity activity, String keyID) {
         this.keyID = keyID;
@@ -33,8 +34,7 @@ public class KeyChain {
         this.fm = FingerprintManagerCompat.from(activity.getApplicationContext());
 
         KeyChain.packageName = this.activity.getApplicationContext().getPackageName();
-        KeyChain.mMaxAttempts = 3;
-        KeyChain.mDisableBackup = true;
+        KeyChain.mDisableBackup = false;
     }
 
     public boolean isFingerprintAvailable() {
@@ -44,7 +44,6 @@ public class KeyChain {
 
 
     public static String packageName;
-    public static int mMaxAttempts;
     public static boolean mDisableBackup;
 
     public void generateSeed() throws IOException {
@@ -126,23 +125,27 @@ public class KeyChain {
         return fm.hasEnrolledFingerprints();
     }
 
+    public void setLocale(Locale locale) {
+        this.locale = locale;
+    }
+
     public void startScan(final Callback callback) throws IOException {
         final Mac mac = this.initCrypto();
         FingerprintAuthenticationDialogFragment mFragment = new FingerprintAuthenticationDialogFragment();
-
+        mFragment.setLocale(this.locale);
         mFragment.setCallback(new FingerprintAuthenticationDialogFragment.Callback() {
             @Override
             public void onSuccess() {
                 try {
                     callback.onSuccess(derivePrivateKey(fetchSeed(mac)));
                 } catch (IOException e) {
-                    callback.onError("Failed to access keystore");
+                    callback.onError(-1);
                 }
             }
 
             @Override
-            public void onError(String errString) {
-                callback.onError(errString);
+            public void onError(int errCode) {
+                callback.onError(errCode);
             }
 
             @Override
@@ -154,9 +157,18 @@ public class KeyChain {
         mFragment.show(this.activity.getSupportFragmentManager(), "FpAuthDialog");
     }
 
+    public static class Locale {
+        public String titleText = "";
+        public String cancelText = "";
+        public String descText = "";
+        public String hintText = "";
+        public String notRecognizedText = "";
+        public String successText = "";
+    }
+
     public interface Callback {
         void onSuccess(String privateKey);
-        void onError(String errString);
+        void onError(int errCode);
         void onCancel();
     }
 }

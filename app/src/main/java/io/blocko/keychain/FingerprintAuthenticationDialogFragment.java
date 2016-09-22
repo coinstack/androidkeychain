@@ -55,6 +55,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
     private Callback callback;
+    private KeyChain.Locale locale = null;
 
     public FingerprintAuthenticationDialogFragment() {
     }
@@ -79,10 +80,14 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         Bundle args = getArguments();
         Log.d(TAG, "disableBackup: " + KeyChain.mDisableBackup);
 
-        int fingerprint_auth_dialog_title_id = getResources()
-                .getIdentifier("fingerprint_auth_dialog_title", "string",
-                        KeyChain.packageName);
-        getDialog().setTitle(getString(fingerprint_auth_dialog_title_id));
+        if (this.locale != null) {
+            getDialog().setTitle(this.locale.titleText);
+        } else {
+            int fingerprint_auth_dialog_title_id = getResources()
+                    .getIdentifier("fingerprint_auth_dialog_title", "string",
+                            KeyChain.packageName);
+            getDialog().setTitle(getString(fingerprint_auth_dialog_title_id));
+        }
         int fingerprint_dialog_container_id = getResources()
                 .getIdentifier("fingerprint_dialog_container", "layout",
                         KeyChain.packageName);
@@ -97,26 +102,9 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
                 dismiss();
             }
         });
-
-        int second_dialog_button_id = getResources()
-                .getIdentifier("second_dialog_button", "id", KeyChain.packageName);
-        mSecondDialogButton = (Button) v.findViewById(second_dialog_button_id);
-        if (KeyChain.mDisableBackup) {
-            mSecondDialogButton.setVisibility(View.GONE);
-        }
-        mSecondDialogButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                goToBackup();
-            }
-        });
         int fingerprint_container_id = getResources()
                 .getIdentifier("fingerprint_container", "id", KeyChain.packageName);
         mFingerprintContent = v.findViewById(fingerprint_container_id);
-
-        int new_fingerprint_enrolled_description_id = getResources()
-                .getIdentifier("new_fingerprint_enrolled_description", "id",
-                        KeyChain.packageName);
 
         int fingerprint_icon_id = getResources()
                 .getIdentifier("fingerprint_icon", "id", KeyChain.packageName);
@@ -125,13 +113,24 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         mFingerprintUiHelper = mFingerprintUiHelperBuilder.build(
                 (ImageView) v.findViewById(fingerprint_icon_id),
                 (TextView) v.findViewById(fingerprint_status_id), this);
-        updateStage();
 
-        // If fingerprint authentication is not available, switch immediately to the backup
-        // (password) screen.
-        if (!mFingerprintUiHelper.isFingerprintAuthAvailable()) {
-            goToBackup();
+        if (this.locale != null) {
+            int fingerprint_description_id = getResources()
+                    .getIdentifier("fingerprint_description", "id", KeyChain.packageName);
+            TextView mFingerprintDescription = (TextView) v.findViewById(fingerprint_description_id);
+            mFingerprintDescription.setText(this.locale.descText);
+
+
+            int fingerprint_hint_id = getResources()
+                    .getIdentifier("fingerprint_status", "id", KeyChain.packageName);
+            TextView mFingerprintHint = (TextView) v.findViewById(fingerprint_hint_id);
+            mFingerprintHint.setText(this.locale.hintText);
+
+            mFingerprintUiHelper.setLocale(this.locale);
         }
+
+
+        updateStage();
         return v;
     }
 
@@ -161,48 +160,17 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         mCryptoObject = cryptoObject;
     }
 
-    /**
-     * Switches to backup (password) screen. This either can happen when fingerprint is not
-     * available or the user chooses to use the password authentication method by pressing the
-     * button. This can also happen when the user had too many fingerprint attempts.
-     */
-    private void goToBackup() {
-        mStage = Stage.BACKUP;
-        updateStage();
-    }
-
     private void updateStage() {
         int cancel_id = getResources()
                 .getIdentifier("cancel", "string", KeyChain.packageName);
         switch (mStage) {
             case FINGERPRINT:
-                mCancelButton.setText(cancel_id);
-                int use_backup_id = getResources()
-                        .getIdentifier("use_backup", "string", KeyChain.packageName);
-                mSecondDialogButton.setText(use_backup_id);
+                if (this.locale != null) {
+                    mCancelButton.setText(this.locale.cancelText);
+                } else {
+                    mCancelButton.setText(cancel_id);
+                }
                 mFingerprintContent.setVisibility(View.VISIBLE);
-                break;
-            case NEW_FINGERPRINT_ENROLLED:
-                // Intentional fall through
-            case BACKUP:
-                if (mStage == Stage.NEW_FINGERPRINT_ENROLLED) {
-
-                }
-                if (!mKeyguardManager.isKeyguardSecure()) {
-                    // Show a message that the user hasn't set up a lock screen.
-                    int secure_lock_screen_required_id = getResources()
-                            .getIdentifier("secure_lock_screen_required", "string",
-                                    KeyChain.packageName);
-                    Toast.makeText(getContext(),
-                            getString(secure_lock_screen_required_id),
-                            Toast.LENGTH_LONG).show();
-                    return;
-                }
-                if (KeyChain.mDisableBackup) {
-                    this.callback.onError("backup disabled");
-                    return;
-                }
-                showAuthenticationScreen();
                 break;
         }
     }
@@ -236,14 +204,9 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     }
 
     @Override
-    public void onError(CharSequence errString) {
-        if (!KeyChain.mDisableBackup) {
-            goToBackup();
-        } else {
-            this.callback.onError(errString.toString());
-            dismiss();
-
-        }
+    public void onError(int errCode) {
+        this.callback.onError(errCode);
+        dismiss();
     }
 
     @Override
@@ -256,18 +219,22 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         this.callback = callback;
     }
 
+    public void setLocale(KeyChain.Locale locale) {
+        this.locale = locale;
+    }
+
     /**
      * Enumeration to indicate which authentication method the user is trying to authenticate with.
      */
     public enum Stage {
-        FINGERPRINT,
-        NEW_FINGERPRINT_ENROLLED,
-        BACKUP
+        FINGERPRINT
     }
 
     public interface Callback {
         void onSuccess();
-        void onError(String errString);
+
+        void onError(int errCode);
+
         void onCancel();
     }
 }

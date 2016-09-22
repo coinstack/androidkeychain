@@ -42,6 +42,11 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
     private int mAttempts = 0;
 
     boolean mSelfCancelled;
+    private KeyChain.Locale locale;
+
+    public void setLocale(KeyChain.Locale locale) {
+        this.locale = locale;
+    }
 
     /**
      * Builder class for {@link FingerprintUiHelper} in which injected fields from Dagger
@@ -67,7 +72,7 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
      * only the {@link FingerprintUiHelperBuilder} class.
      */
     private FingerprintUiHelper(Context context, FingerprintManagerCompat fingerprintManager,
-            ImageView icon, TextView errorTextView, Callback callback) {
+                                ImageView icon, TextView errorTextView, Callback callback) {
         mFingerprintManager = fingerprintManager;
         mIcon = icon;
         mErrorTextView = errorTextView;
@@ -87,7 +92,7 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
         mCancellationSignal = new CancellationSignal();
         mSelfCancelled = false;
         mFingerprintManager
-                .authenticate(cryptoObject, 0 /* flags */, mCancellationSignal,  this, null);
+                .authenticate(cryptoObject, 0 /* flags */, mCancellationSignal, this, null);
 
         int ic_fp_40px_id = mContext.getResources()
                 .getIdentifier("ic_fp_40px", "drawable", KeyChain.packageName);
@@ -106,10 +111,11 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
     public void onAuthenticationError(int errMsgId, final CharSequence errString) {
         if (!mSelfCancelled) {
             showError(errString);
+            final int errMsgIdFinal = errMsgId;
             mIcon.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    mCallback.onError(errString);
+                    mCallback.onError(errMsgIdFinal);
                 }
             }, ERROR_TIMEOUT_MILLIS);
         }
@@ -126,19 +132,8 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
         int fingerprint_not_recognized_id = mContext.getResources()
                 .getIdentifier("fingerprint_not_recognized", "string",
                         KeyChain.packageName);
-        int fingerprint_too_many_attempts_id = mContext.getResources()
-                .getIdentifier("fingerprint_too_many_attempts", "string",
-                        KeyChain.packageName);
-        final String too_many_attempts_string = mIcon.getResources().getString(
-                fingerprint_too_many_attempts_id);
-        if (mAttempts > KeyChain.mMaxAttempts) {
-            showError(too_many_attempts_string);
-            mIcon.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mCallback.onError(too_many_attempts_string);
-                }
-            }, ERROR_TIMEOUT_MILLIS);
+        if (this.locale != null) {
+            showError(this.locale.notRecognizedText);
         } else {
             showError(mIcon.getResources().getString(
                     fingerprint_not_recognized_id));
@@ -157,8 +152,12 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
                 mErrorTextView.getResources().getColor(success_color_id, null));
         int fingerprint_success_id = mContext.getResources()
                 .getIdentifier("fingerprint_success", "string", KeyChain.packageName);
-        mErrorTextView.setText(
-                mErrorTextView.getResources().getString(fingerprint_success_id));
+        if (this.locale != null) {
+            mErrorTextView.setText(this.locale.successText);
+        } else {
+            mErrorTextView.setText(
+                    mErrorTextView.getResources().getString(fingerprint_success_id));
+        }
         mIcon.postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -189,8 +188,12 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
                     mErrorTextView.getResources().getColor(hint_color_id, null));
             int fingerprint_hint_id = mContext.getResources()
                     .getIdentifier("fingerprint_hint", "string", KeyChain.packageName);
-            mErrorTextView.setText(
-                    mErrorTextView.getResources().getString(fingerprint_hint_id));
+            if (locale != null) {
+                mErrorTextView.setText(locale.hintText);
+            } else {
+                mErrorTextView.setText(
+                        mErrorTextView.getResources().getString(fingerprint_hint_id));
+            }
             int ic_fp_40px_id = mContext.getResources()
                     .getIdentifier("ic_fp_40px", "drawable", KeyChain.packageName);
             mIcon.setImageResource(ic_fp_40px_id);
@@ -201,6 +204,6 @@ public class FingerprintUiHelper extends FingerprintManagerCompat.Authentication
 
         void onAuthenticated();
 
-        void onError(CharSequence errString);
+        void onError(int errCode);
     }
 }

@@ -62,6 +62,15 @@ public class MainActivity extends AppCompatActivity {
                         // do fingerprint auth
                         try {
 
+                            KeyChain.Locale locale = new KeyChain.Locale();
+                            locale.descText = "설명";
+                            locale.cancelText = "취소";
+                            locale.titleText = "타이틀";
+                            locale.hintText = "지문";
+                            locale.successText = "인식성공";
+                            locale.notRecognizedText = "인식실패";
+                            keychain.setLocale(locale);
+
                             keychain.startScan(new KeyChain.Callback() {
                                 @Override
                                 public void onSuccess(String privateKey) {
@@ -69,8 +78,9 @@ public class MainActivity extends AppCompatActivity {
                                 }
 
                                 @Override
-                                public void onError(String errString) {
-                                    System.out.println(errString);
+                                public void onError(int errCode) {
+                                    System.out.println(errCode);
+                                    System.out.println("scan failed");
                                 }
 
                                 @Override
