@@ -1,6 +1,5 @@
 package io.blocko.keychain;
 
-import android.content.Context;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
@@ -22,19 +21,19 @@ import io.blocko.bitcoinj.params.MainNetParams;
  * Created by shepelt on 2016. 9. 21..
  */
 
-public class KeyChain {
+public class FingerprintScanner {
     private final AppCompatActivity activity;
     private final String keyID;
     private FingerprintManagerCompat fm;
     private Locale locale;
 
-    public KeyChain(AppCompatActivity activity, String keyID) {
+    public FingerprintScanner(AppCompatActivity activity, String keyID) {
         this.keyID = keyID;
         this.activity = activity;
         this.fm = FingerprintManagerCompat.from(activity.getApplicationContext());
 
-        KeyChain.packageName = this.activity.getApplicationContext().getPackageName();
-        KeyChain.mDisableBackup = false;
+        FingerprintScanner.packageName = this.activity.getApplicationContext().getPackageName();
+        FingerprintScanner.mDisableBackup = false;
     }
 
     public boolean isFingerprintAvailable() {

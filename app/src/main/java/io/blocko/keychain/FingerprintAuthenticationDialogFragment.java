@@ -20,7 +20,6 @@ import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
@@ -28,11 +27,9 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * A dialog which uses fingerprint APIs to authenticate the user, and falls back to password
@@ -55,7 +52,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     private FingerprintUiHelper mFingerprintUiHelper;
     FingerprintUiHelper.FingerprintUiHelperBuilder mFingerprintUiHelperBuilder;
     private Callback callback;
-    private KeyChain.Locale locale = null;
+    private FingerprintScanner.Locale locale = null;
 
     public FingerprintAuthenticationDialogFragment() {
     }
@@ -78,22 +75,22 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         Bundle args = getArguments();
-        Log.d(TAG, "disableBackup: " + KeyChain.mDisableBackup);
+        Log.d(TAG, "disableBackup: " + FingerprintScanner.mDisableBackup);
 
         if (this.locale != null) {
             getDialog().setTitle(this.locale.titleText);
         } else {
             int fingerprint_auth_dialog_title_id = getResources()
                     .getIdentifier("fingerprint_auth_dialog_title", "string",
-                            KeyChain.packageName);
+                            FingerprintScanner.packageName);
             getDialog().setTitle(getString(fingerprint_auth_dialog_title_id));
         }
         int fingerprint_dialog_container_id = getResources()
                 .getIdentifier("fingerprint_dialog_container", "layout",
-                        KeyChain.packageName);
+                        FingerprintScanner.packageName);
         View v = inflater.inflate(fingerprint_dialog_container_id, container, false);
         int cancel_button_id = getResources()
-                .getIdentifier("cancel_button", "id", KeyChain.packageName);
+                .getIdentifier("cancel_button", "id", FingerprintScanner.packageName);
         mCancelButton = (Button) v.findViewById(cancel_button_id);
         mCancelButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -103,26 +100,26 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
             }
         });
         int fingerprint_container_id = getResources()
-                .getIdentifier("fingerprint_container", "id", KeyChain.packageName);
+                .getIdentifier("fingerprint_container", "id", FingerprintScanner.packageName);
         mFingerprintContent = v.findViewById(fingerprint_container_id);
 
         int fingerprint_icon_id = getResources()
-                .getIdentifier("fingerprint_icon", "id", KeyChain.packageName);
+                .getIdentifier("fingerprint_icon", "id", FingerprintScanner.packageName);
         int fingerprint_status_id = getResources()
-                .getIdentifier("fingerprint_status", "id", KeyChain.packageName);
+                .getIdentifier("fingerprint_status", "id", FingerprintScanner.packageName);
         mFingerprintUiHelper = mFingerprintUiHelperBuilder.build(
                 (ImageView) v.findViewById(fingerprint_icon_id),
                 (TextView) v.findViewById(fingerprint_status_id), this);
 
         if (this.locale != null) {
             int fingerprint_description_id = getResources()
-                    .getIdentifier("fingerprint_description", "id", KeyChain.packageName);
+                    .getIdentifier("fingerprint_description", "id", FingerprintScanner.packageName);
             TextView mFingerprintDescription = (TextView) v.findViewById(fingerprint_description_id);
             mFingerprintDescription.setText(this.locale.descText);
 
 
             int fingerprint_hint_id = getResources()
-                    .getIdentifier("fingerprint_status", "id", KeyChain.packageName);
+                    .getIdentifier("fingerprint_status", "id", FingerprintScanner.packageName);
             TextView mFingerprintHint = (TextView) v.findViewById(fingerprint_hint_id);
             mFingerprintHint.setText(this.locale.hintText);
 
@@ -162,7 +159,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
 
     private void updateStage() {
         int cancel_id = getResources()
-                .getIdentifier("cancel", "string", KeyChain.packageName);
+                .getIdentifier("cancel", "string", FingerprintScanner.packageName);
         switch (mStage) {
             case FINGERPRINT:
                 if (this.locale != null) {
@@ -219,7 +216,7 @@ public class FingerprintAuthenticationDialogFragment extends DialogFragment
         this.callback = callback;
     }
 
-    public void setLocale(KeyChain.Locale locale) {
+    public void setLocale(FingerprintScanner.Locale locale) {
         this.locale = locale;
     }
 

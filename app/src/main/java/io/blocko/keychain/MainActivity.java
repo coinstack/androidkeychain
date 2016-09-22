@@ -3,16 +3,12 @@ package io.blocko.keychain;
 import android.Manifest;
 import android.content.pm.PackageManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.hardware.fingerprint.FingerprintManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
 import java.io.IOException;
-
-import javax.crypto.Mac;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -24,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
 
-        final KeyChain keychain = new KeyChain(this, "TESTKEY");
+        final FingerprintScanner keychain = new FingerprintScanner(this, "TESTKEY");
 
 
         final Button button = (Button) findViewById(R.id.button);
@@ -62,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
                         // do fingerprint auth
                         try {
 
-                            KeyChain.Locale locale = new KeyChain.Locale();
+                            FingerprintScanner.Locale locale = new FingerprintScanner.Locale();
                             locale.descText = "설명";
                             locale.cancelText = "취소";
                             locale.titleText = "타이틀";
@@ -71,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
                             locale.notRecognizedText = "인식실패";
                             keychain.setLocale(locale);
 
-                            keychain.startScan(new KeyChain.Callback() {
+                            keychain.startScan(new FingerprintScanner.Callback() {
                                 @Override
                                 public void onSuccess(String privateKey) {
                                     System.out.println(privateKey);
